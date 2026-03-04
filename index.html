@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ricky Brut (BRUT) - Dashboard Mining & Staking</title>
+
+    <script src="https://cdnjs.cloudflare.com" type="text/javascript"></script>
+    <link href="https://fonts.googleapis.com" rel="stylesheet">
+    
+    <style>
+        :root { --primary: #F3BA2F; --dark: #1e2026; --light: #f8f9fa; --danger: #e74c3c; --success: #27ae60; }
+        body { font-family: 'Inter', sans-serif; background: var(--light); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        
+        .container { background: white; max-width: 480px; width: 100%; padding: 25px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; margin-bottom: 20px; box-sizing: border-box; border-top: 6px solid var(--primary); }
+        .logo { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--primary); margin-bottom: 15px; object-fit: cover; background: #eee; }
+        
+        .lock-notice { background: #fff4e5; padding: 12px; border-radius: 12px; font-size: 0.85em; margin-bottom: 20px; display: none; border: 1px dashed var(--primary); color: #856404; }
+        #ownerTimer { font-weight: bold; color: var(--danger); }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+        .stat-item { background: #fbfbfb; padding: 12px; border-radius: 15px; border: 1px solid #eee; font-size: 0.8em; color: #666; }
+        .stat-item b { display: block; font-size: 1.25em; color: var(--dark); margin-top: 5px; }
+        
+        button { width: 100%; padding: 14px; margin: 8px 0; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .btn-connect { background: var(--dark); color: white; }
+        .btn-mine { background: var(--primary); color: #000; }
+        .btn-mine:disabled { background: #e0e0e0; color: #888; cursor: not-allowed; box-shadow: none; }
+        .btn-stake { background: var(--success); color: white; }
+        .btn-claim { background: #2980b9; color: white; }
+        .btn-withdraw { background: var(--danger); color: white; font-size: 0.8em; }
+        
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; text-align: center; font-size: 1em; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--primary); }
+        
+        #status { font-size: 0.85em; color: #555; margin-top: 15px; padding: 10px; border-radius: 10px; background: #f0f0f0; min-height: 20px; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 25px 0; }
+
+        .guide { text-align: left; background: white; max-width: 480px; width: 100%; padding: 25px; border-radius: 24px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); box-sizing: border-box; }
+        .step { margin-bottom: 15px; border-left: 4px solid var(--primary); padding-left: 15px; }
+        .step h4 { margin: 0; font-size: 0.9em; color: var(--dark); }
+        .step p { margin: 5px 0 0 0; font-size: 0.85em; color: #666; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="lockUI" class="lock-notice">🔒 Owner Tokens Locked: <span id="ownerTimer">Memuat...</span></div>
+
+    <img src="https://gateway.pinata.cloud/ipfs/bafybeidxbqamvpfxy672swkmg5aftlfc34sp6worj6q3avykarzat2ty6m" class="logo" alt="BRUT Logo">
+    <h2 style="margin: 5px 0; color: var(--dark);">Ricky Brut (BRUT)</h2>
+    <p style="font-size: 0.8em; color: #aaa; margin-bottom: 20px;">Jaringan: BSC Mainnet</p>
+    
+    <div class="stats-grid">
+        <div class="stat-item">Saldo Dompet<b id="balance">0.00</b></div>
+        <div class="stat-item">Total Staked<b id="staked">0.00</b></div>
+        <div class="stat-item">Reward Tersedia<b id="reward">0.0000</b></div>
+        <div class="stat-item">Referral<b id="refCount">0</b></div>
+    </div>
+
+    <button id="connectBtn" class="btn-connect" onclick="connect()">HUBUNGKAN METAMASK</button>
+    
+    <div id="mainUI" style="display:none;">
+        <button style="background:#8e44ad; color:white; font-size: 0.8em;" onclick="addTokenToWallet()">🦊 Munculkan Logo di MetaMask</button>
+        <hr>
+        <label style="font-size: 0.7em; color: #999; font-weight: bold;">REFERRAL ADDRESS (OPTIONAL)</label>
+        <input type="text" id="referrer" placeholder="0x...">
+        <button id="mineBtn" class="btn-mine" onclick="mine()">⛏ MULAI MINING (24 JAM)</button>
+        <hr>
+        <label style="font-size: 0.7em; color: #999; font-weight: bold;">JUMLAH STAKE</label>
+        <input type="number" id="stakeAmt" placeholder="Masukkan jumlah BRUT">
+        <button class="btn-stake" onclick="stake()">STAKE BRUT</button>
+        <button class="btn-claim" onclick="claim()">AMBIL HADIAH STAKE</button>
+        <button class="btn-withdraw" onclick="withdraw()">TARIK SEMUA STAKE & HADIAH</button>
+    </div>
+
+    <div id="status">Silakan hubungkan dompet untuk memulai.</div>
+</div>
+
+<div class="guide">
+    <h3 style="margin-top:0; color: var(--primary); text-align:center;">🚀 CARA MINING</h3>
+    <div class="step">
+        <h4>1. Mining Gratis Setiap Hari</h4>
+        <p>Anda bisa mengklaim 100 BRUT setiap 24 jam sekali. Pastikan ada saldo BNB untuk biaya gas jaringan.</p>
+    </div>
+    <div class="step">
+        <h4>2. Passive Income (Staking)</h4>
+        <p>Kunci BRUT Anda untuk mendapatkan bunga otomatis. Reward bisa diambil kapan saja tanpa menunggu.</p>
+    </div>
+</div>
+
+<script type="text/javascript">
+    let provider, signer, contract;
+
+    const contractAddress = "0x13597c6F66819a9daAB2Bab97037ea5E5605561D"; 
+    
+    const abi = [
+        "function balanceOf(address) view returns (uint256)",
+        "function mine(address) public",
+        "function lastMined(address) view returns (uint256)",
+        "function MINING_COOLDOWN() view returns (uint256)",
+        "function stake(uint256) public",
+        "function claimStakeReward() public",
+        "function withdrawStake() public",
+        "function calculateReward(address) view returns (uint256)",
+        "function stakedAmount(address) view returns (uint256)",
+        "function referralCount(address) view returns (uint256)",
+        "function lockUntil() view returns (uint256)",
+        "function getLogoURI() view returns (string)"
+    ];
+
+    async function connect() {
+        if (typeof window.ethereum === 'undefined') {
+            alert("Silakan instal MetaMask!");
+            return;
+        }
+
+        try {
+            updateStatus("Menghubungkan...");
+
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            const { chainId } = await provider.getNetwork();
+
+            if (chainId !== 56) {
+                updateStatus("Berpindah ke BSC Mainnet...");
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0x38' }],
+                    });
+                    location.reload();
+                } catch (err) {
+                    alert("Harap ubah jaringan ke Binance Smart Chain Mainnet!");
+                    return;
+                }
+            }
+
+            signer = provider.getSigner();
+            contract = new ethers.Contract(contractAddress, abi, signer);
+
+            document.getElementById('connectBtn').style.display = "none";
+            document.getElementById('mainUI').style.display = "block";
+            
+            updateStatus("Terhubung ke BSC Mainnet");
+            refreshData();
+            checkLock();
+            startMiningTimer();
+            setInterval(refreshData, 20000);
+
+        } catch (error) {
+            console.error(error);
+            if (error.code === -32002) {
+                updateStatus("Buka MetaMask, ada permintaan tertunda!");
+            } else {
+                updateStatus("Koneksi gagal.");
+            }
+        }
+    }
+
+    async function refreshData() {
+        try {
+            const addr = await signer.getAddress();
+            const [bal, stk, rew, ref] = await Promise.all([
+                contract.balanceOf(addr),
+                contract.stakedAmount(addr),
+                contract.calculateReward(addr),
+                contract.referralCount(addr)
+            ]);
+            document.getElementById('balance').innerText = (+ethers.utils.formatEther(bal)).toFixed(2);
+            document.getElementById('staked').innerText = (+ethers.utils.formatEther(stk)).toFixed(2);
+            document.getElementById('reward').innerText = (+ethers.utils.formatEther(rew)).toFixed(5);
+            document.getElementById('refCount').innerText = ref.toString();
+        } catch (e) { console.log("Refresh error"); }
+    }
+
+    async function startMiningTimer() {
+        const addr = await signer.getAddress();
+        const last = await contract.lastMined(addr);
+        const cooldown = await contract.MINING_COOLDOWN();
+        const next = (last.toNumber() + cooldown.toNumber()) * 1000;
+        
+        const btn = document.getElementById('mineBtn');
+        const timerFunc = () => {
+            const now = Date.now();
+            if (next > now) {
+                btn.disabled = true;
+                const diff = next - now;
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                btn.innerText = `Tunggu ${h}j ${m}m ${s}d`;
+            } else {
+                btn.disabled = false;
+                btn.innerText = "⛏ MULAI MINING SEKARANG";
+            }
+        };
+        timerFunc();
+        setInterval(timerFunc, 1000);
+    }
+
+    async function mine() {
+        try {
+            const ref = document.getElementById('referrer').value || "0x0000000000000000000000000000000000000000";
+            updateStatus("Memproses Mining... Harap tunggu.");
+            const tx = await contract.mine(ref);
+            await tx.wait();
+            updateStatus("Mining Berhasil!");
+            refreshData();
+        } catch (e) { 
+            updateStatus("Gagal. Pastikan BNB cukup & cooldown selesai."); 
+        }
+    }
+
+    async function stake() {
+        try {
+            const amt = document.getElementById('stakeAmt').value;
+            if(!amt) return;
+            const tx = await contract.stake(ethers.utils.parseEther(amt));
+            updateStatus("Sedang menanam stake...");
+            await tx.wait();
+            updateStatus("Stake Berhasil!");
+            refreshData();
+        } catch (e) { updateStatus("Gagal Stake."); }
+    }
+
+    async function claim() {
+        try {
+            updateStatus("Mengklaim hadiah...");
+            const tx = await contract.claimStakeReward();
+            await tx.wait();
+            updateStatus("Reward Masuk Dompet!");
+            refreshData();
+        } catch (e) { updateStatus("Klaim Gagal."); }
+    }
+
+    async function withdraw() {
+        try {
+            updateStatus("Menarik seluruh dana...");
+            const tx = await contract.withdrawStake();
+            await tx.wait();
+            updateStatus("Berhasil Ditarik!");
+            refreshData();
+        } catch (e) { updateStatus("Gagal Withdraw."); }
+    }
+
+    async function addTokenToWallet() {
+        try {
+            const logo = await contract.getLogoURI();
+            await window.ethereum.request({
+                method: 'wallet_watchAsset',
+                params: {
+                    type: 'ERC20',
+                    options: {
+                        address: contractAddress,
+                        symbol: 'BRUT',
+                        decimals: 18,
+                        image: logo,
+                    },
+                },
+            });
+        } catch (e) { console.log(e); }
+    }
+
+    async function checkLock() {
+        const until = await contract.lockUntil();
+        if (until.toNumber() > 0) {
+            document.getElementById('lockUI').style.display = "block";
+            const updateTimer = () => {
+                const diff = (until.toNumber() * 1000) - Date.now();
+                if (diff > 0) {
+                    const days = Math.floor(diff / 86400000);
+                    document.getElementById('ownerTimer').innerText = days + " Hari Lagi";
+                } else {
+                    document.getElementById('ownerTimer').innerText = "UNLOCKED";
+                }
+            };
+            updateTimer();
+            setInterval(updateTimer, 60000);
+        }
+    }
+
+    function updateStatus(msg) {
+        document.getElementById('status').innerText = msg;
+    }
+</script>
+
+</body>
+</html>
